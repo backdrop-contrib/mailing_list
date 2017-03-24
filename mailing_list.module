@@ -45,7 +45,7 @@ function mailing_list_menu() {
 
   $items['admin/structure/mailing-list'] = array(
     'title' => 'Mailing lists',
-    'description' => t('Manage your mailing lists.'),
+    'description' => 'Manage your mailing lists.',
     'page callback' => 'mailing_list_lists',
     'access arguments' => array('administer mailing lists'),
     'file' => 'mailing_list.admin.inc',
