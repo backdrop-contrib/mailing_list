@@ -482,6 +482,7 @@ function mailing_list_subscription_form_validate($form, &$form_state) {
  */
 function mailing_list_subscription_form_submit($form, &$form_state) {
   $is_edit = FALSE;
+  $admin = FALSE;
   if (user_access('administer mailing lists')) {
     $admin = TRUE;
     $is_edit = !empty($form_state['values']['eid']);
