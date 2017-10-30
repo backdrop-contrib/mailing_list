@@ -154,6 +154,7 @@ function mailing_list_block_configure($delta = '') {
     '#default_value' => variable_get('mailing_list_show_name_'. $delta, 1),
     '#description' => t('Whether or not to show a text field in the subscription form that this block displays, letting a subscriber enter his or her name. If the name field is shown, it also becomes required.'),
   );
+  return $form;
 }
 
 /**
