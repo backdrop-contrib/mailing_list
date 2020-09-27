@@ -5,18 +5,8 @@
  * Install and update functions for mailing_list.
  */
 
-
 /**
- * Implementation of hook_uninstall().
- */
-function mailing_list_uninstall() {
-  $result = db_delete('block')
-    ->condition('module', 'mailing_list')
-    ->execute();
-}
-
-/**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function mailing_list_schema() {
   $schema = array();
@@ -52,10 +42,10 @@ function mailing_list_schema() {
         'not null' => TRUE,
       ),
       'mlid' => array(
-      	'description' => t('The {mailing_list} this e-mail belongs to.'),
-      	'type' => 'int',
+        'description' => t('The {mailing_list} this e-mail belongs to.'),
+        'type' => 'int',
         'unsigned' => TRUE,
-      	'not null' => TRUE,
+        'not null' => TRUE,
         'default' => 0,
       ),
       'mail' => array(
@@ -86,78 +76,25 @@ function mailing_list_schema() {
 }
 
 /**
- * Update mailing lists to allow subscriber names (not just e-mails), and clean
- * up field names.
+ * Implements hook_update_last_removed().
  */
-function mailing_list_update_6000() {
-  $ret = array();
+function mailing_list_update_last_removed() {
+  return 6000;
+}
 
-  db_change_field($ret, 'mailing_list', 'id', 'mlid',
-    array(
-      'type' => 'serial',
-      'unsigned' => TRUE,
-      'not null' => TRUE,
-    )
-  );
-
-  db_change_field($ret, 'mailing_list', 'list', 'name',
-    array(
-      'type' => 'varchar',
-      'length' => 255,
-      'not null' => TRUE,
-    ),
-    array(
-      'indexes' => array(
-        'name' => array('name'),
-      ),
-    )
-  );
-
-  db_change_field($ret, 'mailing_list_emails', 'id', 'eid',
-    array(
-      'type' => 'serial',
-      'unsigned' => TRUE,
-      'not null' => TRUE,
-    )
-  );
-
-  db_change_field($ret, 'mailing_list_emails', 'mailing_list_id', 'mlid',
-    array(
-      'type' => 'int',
-      'unsigned' => TRUE,
-      'not null' => TRUE,
-      'default' => 0,
-    ),
-    array(
-      'indexes' => array(
-        'mlid' => array('mlid'),
-      ),
-    )
-  );
-
-  db_change_field($ret, 'mailing_list_emails', 'email', 'mail',
-    array(
-      'type' => 'varchar',
-      'length' => 255,
-      'not null' => TRUE,
-    ),
-    array(
-      'indexes' => array(
-        'mail' => array('mail'),
-      ),
-      'unique keys' => array(
-        'mlid_mail' => array('mlid', 'mail'),
-      ),
-    )
-  );
-
-  db_add_field($ret, 'mailing_list_emails', 'name', array('type' => 'varchar', 'not null' => TRUE, 'length' => 255), array('indexes' => array('name' => array('name'))));
-
-  $ret[] = update_sql("DELETE FROM {permission} WHERE perm = 'export mailing list'");
-  $result = db_query("SELECT rid, perm FROM {permission} WHERE perm = 'administer mailing list' ORDER BY rid");
-  while ($role = db_fetch_object($result)) {
-    $ret[] = update_sql("UPDATE {permission} SET perm = 'administer mailing lists' WHERE rid = $role->rid");
-  }
-
-  return $ret;
+/**
+ * Implements hook_update_N().
+ */
+function mailing_list_update_1000() {
+  $config = config('mailing_list.settings');
+  $config->set('mailing_list_subscription_message', update_variable_get('mailing_list_subscription_message', MAILING_LIST_MESSAGE_SUBSCRIPTION));
+  $config->set('mailing_list_show_name_delta', update_variable_get('mailing_list_show_name_delta'));
+  $config->set('mailing_list_message_admin_email_edited', update_variable_get('mailing_list_message_admin_email_edited'));
+  $config->set('mailing_list_message_admin_email_added', update_variable_get('mailing_list_message_admin_email_added'));
+  update_variable_del('mailing_list_limit');
+  update_variable_del('mailing_list_subscription_message');
+  update_variable_del('mailing_list_show_name_delta');
+  update_variable_del('mailing_list_show_name_listmlid');
+  update_variable_del('mailing_list_message_admin_email_edited');
+  update_variable_del('mailing_list_message_admin_email_added');
 }

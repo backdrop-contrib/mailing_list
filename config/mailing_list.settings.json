@@ -1,0 +1,7 @@
+{
+    "_config_name": "mailing_list.settings",
+    "mailing_list_subscription_message": "Subscription for %mail saved.",
+    "mailing_list_show_name_delta": 0,
+    "mailing_list_message_admin_email_edited": "%name <%mail> updated.",
+    "mailing_list_message_admin_email_added": "Submission confirmed: %admin added %name <%mail> to list %list."
+}

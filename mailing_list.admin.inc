@@ -10,13 +10,20 @@
  */
 function mailing_list_lists() {
   $header = array(
-    array('data' => t('Name'), 'field' => 'name', 'sort' => 'asc'),
-    array('data' => t('Operations'), 'colspan' => '5')
+    array(
+      'data' => t('Name'),
+      'field' => 'name',
+      'sort' => 'asc',
+    ),
+    array(
+      'data' => t('Operations'),
+      'colspan' => '5',
+    ),
   );
 
   $lists = mailing_list_get();
   $rows = array();
-  $destination = drupal_get_destination();
+  $destination = backdrop_get_destination();
   foreach ($lists as $mlid => $list) {
     $row = array(l(check_plain($list->name), "admin/structure/mailing-list/$list->mlid"), l(t('list e-mails'), "admin/structure/mailing-list/$list->mlid"), l(t('import e-mails'), "admin/structure/mailing-list/$list->mlid/import", array('query' => $destination)), l(t('export list'), "admin/structure/mailing-list/$list->mlid/export", array('query' => $destination)), l(t('rename list'), "admin/structure/mailing-list/$list->mlid/edit", array('query' => $destination)), l(t('delete list'), "admin/structure/mailing-list/$list->mlid/delete", array('query' => $destination)));
     $rows[] = $row;
@@ -24,7 +31,10 @@ function mailing_list_lists() {
 
   if (empty($rows)) {
     $empty_message = t('No mailing lists found.');
-    $rows[] = array(array('data' => $empty_message, 'colspan' => 6));
+    $rows[] = array(array(
+      'data' => $empty_message,
+      'colspan' => 6,
+    ));
   }
   // @todo: Perhaps change to $build arrays or even table select?
   $output = theme('table', array('header' => $header, 'rows' => $rows));
@@ -40,9 +50,10 @@ function mailing_list_lists() {
  */
 function mailing_list_emails_list($list) {
   if (!empty($_POST['mails']) && isset($_POST['operation']) && ($_POST['operation'] == 'delete')) {
-    $build['mailing_list_email_delete_multiple_confirm'] = drupal_get_form('mailing_list_email_delete_multiple_confirm_form');
-  } else {
-    $build['mailing_list_emails_form'] = drupal_get_form('mailing_list_emails_form', $list);
+    $build['mailing_list_email_delete_multiple_confirm'] = backdrop_get_form('mailing_list_email_delete_multiple_confirm_form');
+  }
+  else {
+    $build['mailing_list_emails_form'] = backdrop_get_form('mailing_list_emails_form', $list);
   }
   return $build;
 }
@@ -57,12 +68,19 @@ function mailing_list_emails_form($form, &$form_state, $list = NULL) {
     return;
   }
   else {
-    drupal_set_title(check_plain($list->name));
+    backdrop_set_title(check_plain($list->name));
   }
 
   $header = array(
-    'mail' => array('data' => t('E-mail'), 'field' => 'mle.mail', 'sort' => 'asc'),
-    'name' => array('data' => t('Name'), 'field' => 'mle.name'),
+    'mail' => array(
+      'data' => t('E-mail'),
+      'field' => 'mle.mail',
+      'sort' => 'asc',
+    ),
+    'name' => array(
+      'data' => t('Name'),
+      'field' => 'mle.name',
+    ),
     'operations' => array('data' => t('Operations')),
   );
 
@@ -75,28 +93,28 @@ function mailing_list_emails_form($form, &$form_state, $list = NULL) {
   $query = $query->extend('PagerDefault')->extend('TableSort');
   $query
     ->fields('mle')
-    ->limit(variable_get('mailing_list_limit', MAILING_LIST_LIMIT))
+    ->limit(50)
     ->orderByHeader($header)
     ->setCountQuery($count_query);
   $result = $query->execute();
 
   $rows = array();
-  $destination = drupal_get_destination();
+  $destination = backdrop_get_destination();
   foreach ($result as $data) {
     // Edit link is broken, see http://drupal.org/node/704564
     $rows[$data->eid] = array(
       'mail' => check_plain($data->mail),
       'name' => (!empty($data->name) ? check_plain($data->name) : theme('placeholder', t('none'))),
-      'operations' => l(t('edit'), "admin/structure/mailing-list/$list->mlid/$data->eid", array('query' => $destination)), l(t('delete'), "admin/structure/mailing-list/$list->mlid/$data->eid/delete", array('query' => $destination))
+      'operations' => l(t('edit'), "admin/structure/mailing-list/$list->mlid/$data->eid", array('query' => $destination)), l(t('delete'), "admin/structure/mailing-list/$list->mlid/$data->eid/delete", array('query' => $destination)),
     );
   }
 
   // Until we have multiple operations, hiding this.
-  //  $form['operation'] = array(
-  //    '#type' => 'select',
-  //    '#options' => array('delete' => 'Delete'),
-  //    '#title' => t('Operations'),
-  //  );
+//  $form['operation'] = array(
+//    '#type' => 'select',
+//    '#options' => array('delete' => 'Delete'),
+//    '#title' => t('Operations'),
+//  );
 
   $form['operation'] = array(
     '#type' => 'hidden',
@@ -110,7 +128,8 @@ function mailing_list_emails_form($form, &$form_state, $list = NULL) {
     '#empty' => t('No content available.'),
   );
 
-  $form['pager'] = array('#markup' => theme('pager', array('tags' => NULL)));
+
+  $form['pager'] = array('#markup' => theme('pager'));
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -120,6 +139,10 @@ function mailing_list_emails_form($form, &$form_state, $list = NULL) {
   return $form;
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function mailing_list_emails_form_validate($form, &$form_state) {
   $operation = $form_state['values']['operation'];
   if (!$operation) {
@@ -127,6 +150,10 @@ function mailing_list_emails_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function mailing_list_emails_form_submit(&$form, &$form_state) {
   if ($form_state['values']['operation'] == 'delete') {
     // This stupid hack is is from user.module.  How to get a confirm form to show
@@ -147,6 +174,10 @@ function mailing_list_emails_form_submit(&$form, &$form_state) {
 }
 
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function mailing_list_email_delete_multiple_confirm_form($form, &$form_state) {
   $edit = $form_state['input'];
 
@@ -156,7 +187,11 @@ function mailing_list_email_delete_multiple_confirm_form($form, &$form_state) {
       ->condition('eid', $mails, 'IN')
       ->execute();
 
-    $form['mails'] = array('#prefix' => '<ul>', '#suffix' => '</ul>', '#tree' => TRUE);
+    $form['mails'] = array(
+      '#prefix' => '<ul>',
+      '#suffix' => '</ul>',
+      '#tree' => TRUE,
+    );
     foreach ($result as $row) {
       $form['mails'][$row->eid] = array(
         '#type' => 'hidden',
@@ -167,11 +202,14 @@ function mailing_list_email_delete_multiple_confirm_form($form, &$form_state) {
     }
   }
   else {
-    drupal_set_message(t('Error, no mails were selected'), 'error');
-    drupal_goto();
+    backdrop_set_message(t('Error, no mails were selected'), 'error');
+    backdrop_goto();
     return;
   }
-  $form['operation'] = array('#type' => 'hidden', '#value' => 'delete');
+  $form['operation'] = array(
+    '#type' => 'hidden',
+    '#value' => 'delete',
+  );
 
   return confirm_form($form,
       t('Are you sure you want to delete these emails?'),
@@ -191,7 +229,7 @@ function mailing_list_email_delete_multiple_confirm_form_submit($form, &$form_st
     ->condition('eid', $mails, 'IN')
     ->execute();
 
-  drupal_set_message(t('Deleted %count emails from the database', array('%count' => count($mails))));
+  backdrop_set_message(t('Deleted %count emails from the database', array('%count' => count($mails))));
 }
 
 /**
@@ -199,17 +237,17 @@ function mailing_list_email_delete_multiple_confirm_form_submit($form, &$form_st
  */
 function mailing_list_form($form, &$form_state, $list = null) {
   if (empty($list)) {
-    drupal_set_title(t('Add mailing list'));
+    backdrop_set_title(t('Add mailing list'));
   }
   else {
-    drupal_set_title(t('Edit mailing list'));
+    backdrop_set_title(t('Edit mailing list'));
   }
 
   $form = array();
   if (isset($form_state['values']['mlid']) || !empty($list)) {
     $form['mlid'] = array(
       '#type' => 'hidden',
-      '#value' => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : isset($list) ? $list->mlid: null,
+      '#value' => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : isset($list) ? $list->mlid : null,
     );
   }
 
@@ -217,7 +255,7 @@ function mailing_list_form($form, &$form_state, $list = null) {
     '#title' => t('List name'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#default_value'=> isset($form_state['values']['name']) ? $form_state['values']['name']: isset($list)?$list->name : '',
+    '#default_value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : isset($list) ? $list->name : '',
   );
   $form['submit'] = array(
     '#value' => t('Save'),
@@ -255,17 +293,18 @@ function mailing_list_form_submit($form, &$form_state) {
     // Update operation
     $list->mlid = $form_state['values']['mlid'];
     $active_messages = $messages['update'];
-  } else {
+  }
+  else {
     $active_messages = $messages['insert'];
   }
 
   try {
     mailing_list_save($list);
-    drupal_set_message(t($active_messages['pass'], array('%name' => $form_state['values']['name'])));
-    watchdog('mailing_list', $active_messages['pass'], array('%name' => $form_state['values']['name']), WATCHDOG_NOTICE, l(t('view'), 'admin/structure/mailing-list/'. $list->mlid));
+    backdrop_set_message(t($active_messages['pass'], array('%name' => $form_state['values']['name'])));
+    watchdog('mailing_list', $active_messages['pass'], array('%name' => $form_state['values']['name']), WATCHDOG_NOTICE, l(t('view'), 'admin/structure/mailing-list/' . $list->mlid));
   }
-  catch(PDOException $e) {
-    drupal_set_message(t($active_messages['fail'], array('%name' => $form_state['values']['name'])), 'error');
+  catch (PDOException $e) {
+    backdrop_set_message(t($active_messages['fail'], array('%name' => $form_state['values']['name'])), 'error');
     watchdog('mailing_list', $active_messages['fail'], array('%name' => $form_state['values']['name']), WATCHDOG_NOTICE);
   }
 }
@@ -277,8 +316,14 @@ function mailing_list_form_submit($form, &$form_state) {
  */
 function mailing_list_delete_confirm($form, $form_state, $list) {
   if (user_access('administer mailing lists')) {
-    $form['mlid'] = array('#type' => 'value', '#value' => $list->mlid);
-    $form['name'] = array('#type' => 'value', '#value' => $list->name);
+    $form['mlid'] = array(
+      '#type' => 'value',
+      '#value' => $list->mlid,
+    );
+    $form['name'] = array(
+      '#type' => 'value',
+      '#value' => $list->name,
+    );
     $output = confirm_form($form,
       t('Are you sure you want to delete mailing list %name? All e-mails in this list will be deleted too.', array('%name' => $list->name)),
       isset($_GET['destination']) ? $_GET['destination'] : 'admin/structure/mailing-list');
@@ -295,7 +340,7 @@ function mailing_list_delete_confirm_submit($form, &$form_state) {
     mailing_list_delete($form_state['values']['mlid']);
     // Remove corresponding block from all themes.
     module_invoke('block', 'flush_caches');
-    drupal_set_message(t('Deleted mailing list %name.', array('%name' => $form_state['values']['name'])));
+    backdrop_set_message(t('Deleted mailing list %name.', array('%name' => $form_state['values']['name'])));
     watchdog('mailing list', 'Mailing list: deleted list %name.', array('%name' => $form_state['values']['name']));
     $form_state['redirect'] = 'admin/structure/mailing-list';
     return;
@@ -310,29 +355,29 @@ function mailing_list_import_form($form, $form_state, $list) {
     return;
   }
 
-  drupal_set_title(t('Import e-mails'));
+  backdrop_set_title(t('Import e-mails'));
 
   $form = array();
   $form['#attributes'] = array('enctype' => "multipart/form-data");
   if ( isset($form_state['values']['mlid']) || isset($list) ) {
     $form['mlid']   = array(
-      '#type'       => 'hidden',
-      '#value'      => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : isset($list) ? $list->mlid: null,
+      '#type' => 'hidden',
+      '#value' => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : isset($list) ? $list->mlid : null,
     );
   }
   if ( isset($form_state['values']['name']) || isset($list) ) {
     $form['name']   = array(
-      '#type'       => 'hidden',
-      '#value'      => isset($form_state['values']['name']) ? $form_state['values']['name'] : isset($list) ? $list->name: null,
+      '#type' => 'hidden',
+      '#value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : isset($list) ? $list->name : null,
     );
   }
   $form['file_upload'] = array(
-    '#title'      => t('CSV file'),
-    '#type'       => 'file',
+    '#title' => t('CSV file'),
+    '#type' => 'file',
   );
   $form['submit'] = array(
-    '#value'      => t('Import'),
-    '#type'       => 'submit',
+    '#value' => t('Import'),
+    '#type' => 'submit',
   );
   return $form;
 }
@@ -347,7 +392,7 @@ function mailing_list_import_form_submit($form, &$form_state) {
   $mlid = $form_state['values']['mlid'];
 
   if ($file = file_save_upload('file_upload', array('file_validate_extensions' => array('csv')))) {
-    ini_set('auto_detect_line_endings',TRUE);
+    ini_set('auto_detect_line_endings', TRUE);
     $handle = @fopen($file->uri, 'r');
     while (($data = fgetcsv($handle)) !== FALSE) {
       $num_fields = count($data);
@@ -365,15 +410,15 @@ function mailing_list_import_form_submit($form, &$form_state) {
     fclose($handle);
 
     if ($num_imported) {
-      drupal_set_message(t('Import complete: %num-imported added to mailing list %name.', array('%num-imported' => format_plural($num_imported, '1 e-mail', '@count e-mails'), '%name' => $form_state['values']['name'])));
+      backdrop_set_message(t('Import complete: %num-imported added to mailing list %name.', array('%num-imported' => format_plural($num_imported, '1 e-mail', '@count e-mails'), '%name' => $form_state['values']['name'])));
     }
   }
 
   if (!$num_imported) {
-    drupal_set_message(t('No e-mails added to mailing list: invalid or empty file.'), 'error');
+    backdrop_set_message(t('No e-mails added to mailing list: invalid or empty file.'), 'error');
   }
 
-  $form_state['redirect'] = 'admin/structure/mailing-list/'. $form_state['values']['mlid'];
+  $form_state['redirect'] = 'admin/structure/mailing-list/' . $form_state['values']['mlid'];
 
   return;
 }
@@ -382,45 +427,51 @@ function mailing_list_import_form_submit($form, &$form_state) {
  * Menu callback; exports a mailing list directly to the user as a CSV file.
  */
 function mailing_list_export($list) {
-	// create file to hold email list
-	$filename = drupal_strtolower(str_replace(' ', '_', $list->name)). '.csv';
-	$full_path = 'temporary' . '://' . $filename;
+  // create file to hold email list
+  $filename = backdrop_strtolower(str_replace(' ', '_', $list->name)) . '.csv';
+  $full_path = 'temporary' . '://' . $filename;
 
-	$result = mailing_list_email_get_by_list($list->mlid, 0, 0);
-	if (count($result) == 0) {
-	  drupal_set_message('Cowardly refusing to export an empty mailing list');
-	  drupal_goto('admin/structure/mailing-list/' . $list->mlid);
-	}
+  $result = mailing_list_email_get_by_list($list->mlid, 0, 0);
+  if (count($result) == 0) {
+    backdrop_set_message('Cowardly refusing to export an empty mailing list');
+    backdrop_goto('admin/structure/mailing-list/' . $list->mlid);
+  }
 
-	// create string with all the emails
-	foreach($result as $row) {
-		$emails[] = '"'. trim($row->mail) .'","'. trim($row->name) .'"';
-	}
+  // create string with all the emails
+  foreach ($result as $row) {
+    $emails[] = '"' . trim($row->mail) . '","' . trim($row->name) . '"';
+  }
 
-	$emails = implode("\n", $emails) ."\n";
+  $emails = implode("\n", $emails) . "\n";
 
-	// write resultant string to file
+  // write resultant string to file
   file_unmanaged_save_data($emails, $full_path, FILE_EXISTS_REPLACE);
 
-	// set headers for file transfer
-	$headers = array(
-		'Content-Type' => 'application/octet-stream',
-		'Content-Transfer-Encoding' => 'binary',
-		'Content-Disposition' => 'attachment; filename="' . basename($full_path) . '";',
-		'Content-Length' => sprintf('%u', filesize($full_path)),
-	);
+  // set headers for file transfer
+  $headers = array(
+    'Content-Type' => 'application/octet-stream',
+    'Content-Transfer-Encoding' => 'binary',
+    'Content-Disposition' => 'attachment; filename="' . basename($full_path) . '";',
+    'Content-Length' => sprintf('%u', filesize($full_path)),
+  );
 
-	file_transfer($full_path, $headers);
+  file_transfer($full_path, $headers);
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function mailing_list_admin_settings($form, &$form_state) {
-  drupal_set_title('Mailing list settings');
+  backdrop_set_title('Mailing list settings');
+  $form['#config'] = 'mailing_list.settings';
   $form['mailing_list_subscription_message'] = array(
     '#type' => 'textfield',
     '#title' => t('Subscription message'),
     '#description' => t('The message users see when they subscribe.  You can use %mail and %name as tokens.'),
-    '#default_value' => variable_get('mailing_list_subscription_message', MAILING_LIST_MESSAGE_SUBSCRIPTION),
+    '#default_value' => config_get('mailing_list.settings', 'mailing_list_subscription_message'),
   );
 
   return system_settings_form($form, TRUE);
 }
+
