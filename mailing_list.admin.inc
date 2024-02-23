@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Mailing list admin UI.
@@ -25,7 +24,13 @@ function mailing_list_lists() {
   $rows = array();
   $destination = backdrop_get_destination();
   foreach ($lists as $mlid => $list) {
-    $row = array(l(check_plain($list->name), "admin/structure/mailing-list/$list->mlid"), l(t('list e-mails'), "admin/structure/mailing-list/$list->mlid"), l(t('import e-mails'), "admin/structure/mailing-list/$list->mlid/import", array('query' => $destination)), l(t('export list'), "admin/structure/mailing-list/$list->mlid/export", array('query' => $destination)), l(t('rename list'), "admin/structure/mailing-list/$list->mlid/edit", array('query' => $destination)), l(t('delete list'), "admin/structure/mailing-list/$list->mlid/delete", array('query' => $destination)));
+    $row = array(
+      l(check_plain($list->name), "admin/structure/mailing-list/$list->mlid"),
+      l(t('list e-mails'), "admin/structure/mailing-list/$list->mlid"),
+      l(t('import e-mails'), "admin/structure/mailing-list/$list->mlid/import", array('query' => $destination)),
+      l(t('export list'), "admin/structure/mailing-list/$list->mlid/export", array('query' => $destination)), l(t('rename list'), "admin/structure/mailing-list/$list->mlid/edit", array('query' => $destination)),
+      l(t('delete list'), "admin/structure/mailing-list/$list->mlid/delete", array('query' => $destination)),
+    );
     $rows[] = $row;
   }
 
@@ -110,11 +115,11 @@ function mailing_list_emails_form($form, &$form_state, $list = NULL) {
   }
 
   // Until we have multiple operations, hiding this.
-//  $form['operation'] = array(
-//    '#type' => 'select',
-//    '#options' => array('delete' => 'Delete'),
-//    '#title' => t('Operations'),
-//  );
+  $form['operation'] = array(
+    '#type' => 'select',
+    '#options' => array('delete' => 'Delete'),
+    '#title' => t('Operations'),
+  );
 
   $form['operation'] = array(
     '#type' => 'hidden',
@@ -127,7 +132,6 @@ function mailing_list_emails_form($form, &$form_state, $list = NULL) {
     '#options' => $rows,
     '#empty' => t('No content available.'),
   );
-
 
   $form['pager'] = array('#markup' => theme('pager'));
 
@@ -156,21 +160,24 @@ function mailing_list_emails_form_validate($form, &$form_state) {
  */
 function mailing_list_emails_form_submit(&$form, &$form_state) {
   if ($form_state['values']['operation'] == 'delete') {
-    // This stupid hack is is from user.module.  How to get a confirm form to show
-    // when you can't just pass the values via GET?  This is a problem.
+    // This stupid hack is is from user.module.  How to get a confirm form to
+    // show when you can't just pass the values via GET?
+    // This is a problem.
     return;
   }
 
   // If other operations come into existance, they could happen here.
   $operation = $form_state['values']['operation'];
   $mails = $form_state['values']['mails'];
-  $func = 'mailing_list_bulk_operation_' . $operation;
-  if (!function_exists($func)) {
-    // I'm not t()'ing this because no one will translate it anyway, and no one should see it.
-    throw new Exception('Unable to process form, ' . $func . ' does not exist');
+  $function = 'mailing_list_bulk_operation_' . $operation;
+  if (!function_exists($function)) {
+    // @todo: find a better way of doing this.
+    throw new Exception(t('Unable to process form, :function does not exist', array(
+      ':function' => $function,
+    )));
   }
   $mails = array_keys(array_filter($mails));
-  call_user_func_array($func, array($mails));
+  call_user_func_array($function, array($mails));
 }
 
 
@@ -219,9 +226,6 @@ function mailing_list_email_delete_multiple_confirm_form($form, &$form_state) {
 
 /**
  * Deletes multiple emails from admin listing screen.
- *
- * @param array $emails
- * @return void
  */
 function mailing_list_email_delete_multiple_confirm_form_submit($form, &$form_state) {
   $mails = array_filter($form_state['values']['mails']);
@@ -235,7 +239,7 @@ function mailing_list_email_delete_multiple_confirm_form_submit($form, &$form_st
 /**
  * Form for adding / renaming a mailing list.
  */
-function mailing_list_form($form, &$form_state, $list = null) {
+function mailing_list_form($form, &$form_state, $list = NULL) {
   if (empty($list)) {
     backdrop_set_title(t('Add mailing list'));
   }
@@ -247,7 +251,7 @@ function mailing_list_form($form, &$form_state, $list = null) {
   if (isset($form_state['values']['mlid']) || !empty($list)) {
     $form['mlid'] = array(
       '#type' => 'hidden',
-      '#value' => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : isset($list) ? $list->mlid : null,
+      '#value' => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : (isset($list) ? $list->mlid : NULL),
     );
   }
 
@@ -255,7 +259,7 @@ function mailing_list_form($form, &$form_state, $list = null) {
     '#title' => t('List name'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#default_value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : isset($list) ? $list->name : '',
+    '#default_value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : (isset($list) ? $list->name : ''),
   );
   $form['submit'] = array(
     '#value' => t('Save'),
@@ -285,12 +289,12 @@ function mailing_list_form_submit($form, &$form_state) {
     'fail' => 'Failed to create mailing list %name',
   );
 
-  // List object to save
+  // List object to save.
   $list = new StdClass();
   $list->name = $form_state['values']['name'];
 
   if (!empty($form_state['values']['mlid'])) {
-    // Update operation
+    // Update operation.
     $list->mlid = $form_state['values']['mlid'];
     $active_messages = $messages['update'];
   }
@@ -362,13 +366,13 @@ function mailing_list_import_form($form, $form_state, $list) {
   if ( isset($form_state['values']['mlid']) || isset($list) ) {
     $form['mlid']   = array(
       '#type' => 'hidden',
-      '#value' => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : isset($list) ? $list->mlid : null,
+      '#value' => isset($form_state['values']['mlid']) ? $form_state['values']['mlid'] : (isset($list) ? $list->mlid : NULL),
     );
   }
   if ( isset($form_state['values']['name']) || isset($list) ) {
     $form['name']   = array(
       '#type' => 'hidden',
-      '#value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : isset($list) ? $list->name : null,
+      '#value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : (isset($list) ? $list->name : NULL),
     );
   }
   $form['file_upload'] = array(
@@ -410,7 +414,10 @@ function mailing_list_import_form_submit($form, &$form_state) {
     fclose($handle);
 
     if ($num_imported) {
-      backdrop_set_message(t('Import complete: %num-imported added to mailing list %name.', array('%num-imported' => format_plural($num_imported, '1 e-mail', '@count e-mails'), '%name' => $form_state['values']['name'])));
+      backdrop_set_message(t('Import complete: %num-imported added to mailing list %name.', array(
+        '%num-imported' => format_plural($num_imported, '1 e-mail', '@count e-mails'),
+        '%name' => $form_state['values']['name'],
+      )));
     }
   }
 
@@ -419,17 +426,15 @@ function mailing_list_import_form_submit($form, &$form_state) {
   }
 
   $form_state['redirect'] = 'admin/structure/mailing-list/' . $form_state['values']['mlid'];
-
-  return;
 }
 
 /**
  * Menu callback; exports a mailing list directly to the user as a CSV file.
  */
 function mailing_list_export($list) {
-  // create file to hold email list
+  // Create file to hold email list.
   $filename = backdrop_strtolower(str_replace(' ', '_', $list->name)) . '.csv';
-  $full_path = 'temporary' . '://' . $filename;
+  $full_path = 'temporary://' . $filename;
 
   $result = mailing_list_email_get_by_list($list->mlid, 0, 0);
   if (count($result) == 0) {
@@ -437,17 +442,17 @@ function mailing_list_export($list) {
     backdrop_goto('admin/structure/mailing-list/' . $list->mlid);
   }
 
-  // create string with all the emails
+  // Create string with all the emails.
   foreach ($result as $row) {
     $emails[] = '"' . trim($row->mail) . '","' . trim($row->name) . '"';
   }
 
   $emails = implode("\n", $emails) . "\n";
 
-  // write resultant string to file
+  // Write resultant string to file.
   file_unmanaged_save_data($emails, $full_path, FILE_EXISTS_REPLACE);
 
-  // set headers for file transfer
+  // Set headers for file transfer.
   $headers = array(
     'Content-Type' => 'application/octet-stream',
     'Content-Transfer-Encoding' => 'binary',

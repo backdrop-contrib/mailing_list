@@ -5,3 +5,6 @@ backdrop = 1.x
 type = module
 
 configure = admin/structure/mailing-list
+
+dependencies[] = entity_plus
+dependencies[] = entity_ui
